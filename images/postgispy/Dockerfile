@@ -42,12 +42,14 @@ RUN $CONDA_DIR/bin/conda create -y -n szo -c conda-forge \
     && $CONDA_DIR/bin/conda clean -afy
 
 ENV PATH=$CONDA_DIR/envs/szo/bin:$PATH
-# Empty installs the newest szo from PyPI; a value pins it, e.g. 0.1.2.
-ARG SZO_VERSION=
-RUN pip install --no-cache-dir "szo${SZO_VERSION:+==$SZO_VERSION}"
+RUN pip install --no-cache-dir szo
+
+# A home writable by any uid, so pip --user and config caches work under user:.
+RUN mkdir -m 1777 /home/szo
+ENV HOME=/home/szo
 
 WORKDIR /app
-# Prints the banner to stderr on every start, then runs the command.
+# On every start: banner to stderr, szo of SZO_VERSION if set, its version, then the command.
 # sh -c receives the command after the script, so it is $0 followed by $@.
-ENTRYPOINT ["sh", "-c", "{ echo xszo/postgispy; python --version; psql --version; gdalinfo --version; } >&2; exec \"$0\" \"$@\""]
+ENTRYPOINT ["sh", "-c", "{ echo xszo/postgispy; python --version; psql --version; gdalinfo --version; if [ -n \"$SZO_VERSION\" ]; then pip install --quiet --user --root-user-action=ignore \"szo==$SZO_VERSION\" || exit 1; fi; python -c \"import szo; print('szo', szo.__version__)\"; } >&2; exec \"$0\" \"$@\""]
 CMD ["bash"]

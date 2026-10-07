@@ -27,7 +27,8 @@ Source and the full description of all three images:
   `pyyaml`, `numpy`, `pandas`, `polars`, `pyarrow`, `openpyxl`,
   `xlsxwriter`, `tabulate`, `structlog`, `pytest`
 - working directory `/app`, default command `bash`, runs as root
-- every start prints the image name and tool versions to stderr
+- every start prints the image name, tool versions and the szo version
+  to stderr, after installing the `szo` named by `SZO_VERSION`, if set
 
 ## Use
 
@@ -42,8 +43,9 @@ services:
     command: python process.py
 ```
 
-Set `user:` to the owner of the mounted folders. Give a library that
-needs a writable home `HOME=/tmp` in `environment:`.
+Set `user:` to the owner of the mounted folders; `HOME` is `/home/szo`,
+writable by any uid. `SZO_VERSION: "0.1.0"` in `environment:` installs
+that `szo` at every start instead of the baked-in newest release.
 
 ```bash
 docker run --rm -v "$PWD:/app" xszo/gdalpy:3.13 gdalinfo input.tif

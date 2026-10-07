@@ -42,9 +42,10 @@ Common to all three images:
 - Python packages: `szo`, `psycopg` (v3, with the C speedup), `sqlalchemy`,
   `requests`, `python-dotenv`, `pyyaml`, `numpy`, `pandas`, `polars`,
   `pyarrow`, `openpyxl`, `xlsxwriter`, `tabulate`, `structlog`, `pytest`
-- working directory `/app`, default command `bash`
+- working directory `/app`, default command `bash`, `HOME=/home/szo`
 - an entrypoint that prints the image name and the Python, psql and GDAL
-  versions to stderr on every start, then runs the command
+  versions to stderr on every start, installs the szo of `SZO_VERSION`
+  when that variable is set, prints the szo version, then runs the command
 
 `postgispy` and `gdalpy` add the geo set: `gdal`, `shapely`, `fiona`,
 `pyogrio`, `rasterio`, `geopandas`, `matplotlib`, `h3-py`, `duckdb`.
@@ -66,9 +67,43 @@ services:
     command: python main.py
 ```
 
-With `user:` set, `HOME` points at a folder the user cannot write. A
-library that insists on a writable home (matplotlib's font cache, pip's
-cache) gets `HOME=/tmp` in `environment:`.
+`HOME` is `/home/szo`, writable by any uid, so caches and `pip install
+--user` work whatever `user:` says.
+
+## Choosing the szo version at start
+
+Each build bakes in the newest `szo` from PyPI. The environment variable
+`SZO_VERSION` overrides it: the entrypoint runs `pip install --user` of
+that version before the command, and the user site shadows the baked copy.
+
+```yaml
+    environment:
+      SZO_VERSION: "0.1.0"
+```
+
+The install happens on every start, since the container's writable layer
+is discarded on recreate, and it needs PyPI to be reachable; without it
+the container fails to start. Unset, nothing is installed.
+
+## Pinning szo in a local image
+
+A host that must not depend on PyPI at start time builds a derived image
+once, on top of the pulled base image, with the szo version baked in:
+
+```bash
+sudo docker build -t mygdal:3.10 --build-arg BASE=xszo/gdalpy:3.10 --build-arg SZO_VERSION=0.1.2 - <<'EOF'
+ARG BASE
+FROM ${BASE}
+ARG SZO_VERSION
+RUN pip install --no-cache-dir "szo==${SZO_VERSION}"
+EOF
+```
+
+It takes seconds, needs no file on the host, and the compose file then
+names `mygdal:3.10`. The name is free, as long as it is not one that exists
+on Docker Hub: a local `xszo/gdalpy:3.10` would be overwritten by the next
+`docker compose pull`. The derived image keeps the entrypoint, so its banner
+shows the pinned szo. Rebuild it after pulling a newer base image.
 
 ## Building locally
 
@@ -78,9 +113,7 @@ docker build --build-arg PG_VERSION=18 -t xszo/postgispy:18 images/postgispy
 docker build --build-arg GDAL_VERSION=3.13 -t xszo/gdalpy:3.13 images/gdalpy
 ```
 
-Without a build argument each Dockerfile builds its `latest` version. All
-three take `SZO_VERSION`; empty, the default, installs the newest `szo`
-from PyPI, `--build-arg SZO_VERSION=0.1.2` pins it. The
+Without a build argument each Dockerfile builds its `latest` version. The
 labels `org.opencontainers.image.revision` and `.created` take the build
 arguments `REVISION` and `CREATED`; the workflow passes the commit hash and
 the build time, a local build may leave them empty.
