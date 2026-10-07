@@ -136,7 +136,7 @@ pushes every version in `versions.json` on each push to `main` that touches
 `images/`, and on manual dispatch; it also pushes each image's `README.md`
 as the Docker Hub description. It authenticates with the repository secrets
 `DOCKERHUB_USERNAME` (`kuszo`) and `DOCKERHUB_TOKEN`, an access token
-of that account with read and write scope. Neither value is in the
+of that account with read, write and delete scope. Neither value is in the
 repository.
 
 To push a build by hand:
