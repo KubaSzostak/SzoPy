@@ -1,0 +1,85 @@
+name: Publish Docker images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "images/**"
+      - ".github/workflows/images.yml"
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.read.outputs.include }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: |
+          include="$(python3 - <<'PY'
+          import json
+          spec = json.load(open("images/versions.json"))
+          print(json.dumps([
+              {"image": image, "arg": s["arg"], "version": v, "latest": v == s["latest"]}
+              for image, s in spec.items() for v in s["versions"]
+          ]))
+          PY
+          )"
+          echo "include=$include" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.include) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: xszo/${{ matrix.image }}
+          tags: |
+            type=raw,value=${{ matrix.version }}
+            type=raw,value=${{ matrix.version }}.{{date 'YYMMDD'}}
+            type=raw,value=latest,enable=${{ matrix.latest }}
+      - id: created
+        run: echo "now=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v7
+        with:
+          context: images/${{ matrix.image }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            ${{ matrix.arg }}=${{ matrix.version }}
+            REVISION=${{ github.sha }}
+            CREATED=${{ steps.created.outputs.now }}
+
+  description:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: python
+            short: Pinned Python, newest psql and PostGIS commands, no GDAL
+          - image: postgispy
+            short: Pinned psql, newest Python, GDAL and PostGIS commands
+          - image: gdalpy
+            short: Pinned GDAL, newest Python, psql and PostGIS commands
+    steps:
+      - uses: actions/checkout@v7
+      - uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: xszo/${{ matrix.image }}
+          readme-filepath: images/${{ matrix.image }}/README.md
+          short-description: ${{ matrix.short }}

@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: docker
+    directories:
+      - /images/python
+      - /images/postgispy
+      - /images/gdalpy
+    schedule:
+      interval: monthly
