@@ -23,6 +23,7 @@ Source and the full description of all three images:
   `matplotlib`, `h3-py`, `duckdb`
 - `psql` and `shp2pgsql`, `pgsql2shp`, `raster2pgsql` from PGDG, newest
   version at build time; no PostgreSQL server
+- `git` and `rclone`
 - `szo`, `psycopg` (v3), `sqlalchemy`, `requests`, `python-dotenv`,
   `pyyaml`, `numpy`, `pandas`, `polars`, `pyarrow`, `openpyxl`,
   `xlsxwriter`, `tabulate`, `structlog`, `pytest`

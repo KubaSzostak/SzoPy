@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt resolute-pgdg main" \
         > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        postgresql-client postgis \
+        postgresql-client postgis git rclone \
     && rm -rf /var/lib/apt/lists/*
 
 ENV CONDA_DIR=/opt/conda

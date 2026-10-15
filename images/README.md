@@ -1,20 +1,23 @@
 # Docker images
 
-Three general-purpose images for running Python scripts in containers.
-Each is built from `ubuntu:26.04` with a conda-forge environment, `psql`,
-the PostGIS command-line loaders and the `szo` package. They differ in
-what is pinned by the tag and what floats to the newest version at build
-time.
+Three general-purpose images for running Python scripts in containers,
+and a fourth to log into. Each is built from `ubuntu:26.04` with a
+conda-forge environment, `psql`, the PostGIS command-line loaders and the
+`szo` package. They differ in what is pinned by the tag and what floats to
+the newest version at build time.
 
 | Image                                 | Tag pins           | Floats       | GDAL   |
 |---------------------------------------|--------------------|--------------|--------|
 | [xszo/python](python/README.md)       | Python             | psql         | no     |
 | [xszo/postgispy](postgispy/README.md) | psql major version | Python, GDAL | newest |
 | [xszo/gdalpy](gdalpy/README.md)       | GDAL minor version | Python, psql | pinned |
+| [xszo/gdalbox](gdalbox/README.md)     | GDAL minor version | Python, psql | pinned |
 
 Pick the image by the thing your scripts must not drift on. Plain database
 work: `python`. Loading data into a PostGIS server of a known version:
-`postgispy`. Geoprocessing tested against one GDAL: `gdalpy`.
+`postgispy`. Geoprocessing tested against one GDAL: `gdalpy`. A long-lived
+container entered with `ssh`, for interactive work and day-long jobs on
+mounted data: `gdalbox`, described [below](#gdalbox-the-workbench).
 
 ## Tags
 
@@ -33,12 +36,13 @@ but does not delete published tags.
 
 ## What is inside
 
-Common to all three images:
+Common to all images:
 
 - `/opt/conda/envs/szo`, a conda-forge environment on `PATH`, so `python`,
   `pip` and `pytest` work without activation
 - `psql` and the PostGIS loaders `shp2pgsql`, `pgsql2shp`, `raster2pgsql`
   from the PGDG apt repository; no PostgreSQL server
+- `git` and `rclone`
 - Python packages: `szo`, `psycopg` (v3, with the C speedup), `sqlalchemy`,
   `requests`, `python-dotenv`, `pyyaml`, `numpy`, `pandas`, `polars`,
   `pyarrow`, `openpyxl`, `xlsxwriter`, `tabulate`, `structlog`, `pytest`
@@ -47,8 +51,8 @@ Common to all three images:
   versions to stderr on every start, installs the szo of `SZO_VERSION`
   when that variable is set, prints the szo version, then runs the command
 
-`postgispy` and `gdalpy` add the geo set: `gdal`, `shapely`, `fiona`,
-`pyogrio`, `rasterio`, `geopandas`, `matplotlib`, `h3-py`, `duckdb`.
+`postgispy`, `gdalpy` and `gdalbox` add the geo set: `gdal`, `shapely`,
+`fiona`, `pyogrio`, `rasterio`, `geopandas`, `matplotlib`, `h3-py`, `duckdb`.
 
 ## User
 
@@ -69,6 +73,31 @@ services:
 
 `HOME` is `/home/szo`, writable by any uid, so caches and `pip install
 --user` work whatever `user:` says.
+
+## gdalbox, the workbench
+
+`xszo/gdalbox` is `gdalpy` built from the same recipe plus `openssh-server`,
+`tmux`, `sudo`, `nano` and `htop`. It is used like a small VM: started and
+stopped on the Docker host, entered with `ssh`, data mounted from the host.
+The Dockerfile mirrors `gdalpy/Dockerfile`; a change to one is made to the
+other.
+
+- The container starts as root and runs `sshd`, which logs in the user
+  `boxer` and nobody else. No `user:` in the compose file; `PUID` and
+  `PGID` set boxer's uid and gid at start instead.
+- Key authentication only. The client's public key goes into
+  `/home/boxer/.ssh/authorized_keys`, folder mode `700`, file mode `600`,
+  owned by `PUID`.
+- Mount `/home/boxer` and `/etc/ssh/keys` from the host. The home keeps
+  dotfiles, `tmux` config and `pip install --user` packages; the key folder
+  keeps the ed25519 host key the entrypoint generates on the first start,
+  so the client sees the same server identity after a recreate.
+- An ssh session does not inherit the container's environment, so the
+  conda path is written to `/etc/environment`, which PAM applies to every
+  login, including `ssh host python script.py`.
+- `SZO_VERSION` is installed into the conda environment, not with
+  `--user`: the entrypoint runs as root and a user install would land in
+  root's home, invisible to boxer.
 
 ## Choosing the szo version at start
 
@@ -111,6 +140,7 @@ shows the pinned szo. Rebuild it after pulling a newer base image.
 docker build --build-arg PYTHON_VERSION=3.14 -t xszo/python:3.14 images/python
 docker build --build-arg PG_VERSION=18 -t xszo/postgispy:18 images/postgispy
 docker build --build-arg GDAL_VERSION=3.13 -t xszo/gdalpy:3.13 images/gdalpy
+docker build --build-arg GDAL_VERSION=3.13 -t xszo/gdalbox:3.13 images/gdalbox
 ```
 
 Without a build argument each Dockerfile builds its `latest` version. The
@@ -126,6 +156,7 @@ docker run --rm xszo/python:3.14 psql --version
 docker run --rm xszo/python:3.14 python -c "import szo, psycopg; print(szo.__version__)"
 docker run --rm xszo/gdalpy:3.13 python -c "from osgeo import gdal; print(gdal.__version__)"
 docker run --rm xszo/postgispy:18 raster2pgsql 2>&1 | head -1
+docker run --rm xszo/gdalbox:3.13 /usr/sbin/sshd -t
 ```
 
 ## Publishing

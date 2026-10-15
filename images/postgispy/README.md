@@ -19,6 +19,7 @@ Source and the full description of all three images:
 
 - `psql` of the tagged version and `shp2pgsql`, `pgsql2shp`, `raster2pgsql`
   from PGDG; no PostgreSQL server
+- `git` and `rclone`
 - the newest Python and GDAL that conda-forge resolves at build time, in
   `/opt/conda/envs/szo`, on `PATH`
 - `gdal`, `shapely`, `fiona`, `pyogrio`, `rasterio`, `geopandas`,
