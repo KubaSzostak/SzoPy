@@ -50,7 +50,6 @@ RUN mkdir -m 1777 /home/szo
 ENV HOME=/home/szo
 
 WORKDIR /app
-# On every start: banner to stderr, szo of SZO_VERSION if set, its version, then the command.
-# sh -c receives the command after the script, so it is $0 followed by $@.
-ENTRYPOINT ["sh", "-c", "{ echo xszo/gdalpy; python --version; psql --version; gdalinfo --version; if [ -n \"$SZO_VERSION\" ]; then pip install --quiet --user --root-user-action=ignore \"szo==$SZO_VERSION\" || exit 1; fi; python -c \"import szo; print('szo', szo.__version__)\"; } >&2; exec \"$0\" \"$@\""]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["bash", "/usr/local/bin/entrypoint.sh"]
 CMD ["bash"]

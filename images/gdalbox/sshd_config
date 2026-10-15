@@ -1,6 +1,6 @@
 Port 22
 HostKey /etc/ssh/keys/ssh_host_ed25519_key
-AllowUsers boxer
+AllowUsers szo
 PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no

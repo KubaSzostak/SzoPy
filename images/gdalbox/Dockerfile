@@ -50,8 +50,8 @@ RUN pip install --no-cache-dir szo
 # An ssh session does not see Docker's ENV; PAM reads /etc/environment for every login.
 RUN echo "PATH=$CONDA_DIR/envs/szo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
         > /etc/environment \
-    && useradd --create-home --shell /bin/bash boxer \
-    && echo "boxer ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/boxer \
+    && useradd --create-home --shell /bin/bash szo \
+    && echo "szo ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/szo \
     && mkdir -p /run/sshd /etc/ssh/keys
 COPY sshd_config /etc/ssh/sshd_config
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

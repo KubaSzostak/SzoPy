@@ -1,6 +1,6 @@
 #!/bin/bash
 # On every start: banner to stderr, szo of SZO_VERSION if set, its version,
-# boxer's uid and gid from PUID and PGID, the host key if missing, then the command.
+# szo's uid and gid from PUID and PGID, the host key if missing, then the command.
 set -e
 
 {
@@ -14,11 +14,11 @@ set -e
     python -c "import szo; print('szo', szo.__version__)"
 } >&2
 
-if [ -n "$PGID" ] && [ "$PGID" != "$(id -g boxer)" ]; then
-    groupmod -o -g "$PGID" boxer
+if [ -n "$PGID" ] && [ "$PGID" != "$(id -g szo)" ]; then
+    groupmod -o -g "$PGID" szo
 fi
-if [ -n "$PUID" ] && [ "$PUID" != "$(id -u boxer)" ]; then
-    usermod -o -u "$PUID" boxer
+if [ -n "$PUID" ] && [ "$PUID" != "$(id -u szo)" ]; then
+    usermod -o -u "$PUID" szo
 fi
 
 if [ ! -f /etc/ssh/keys/ssh_host_ed25519_key ]; then

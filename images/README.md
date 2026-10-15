@@ -83,12 +83,12 @@ The Dockerfile mirrors `gdalpy/Dockerfile`; a change to one is made to the
 other.
 
 - The container starts as root and runs `sshd`, which logs in the user
-  `boxer` and nobody else. No `user:` in the compose file; `PUID` and
-  `PGID` set boxer's uid and gid at start instead.
+  `szo` and nobody else. No `user:` in the compose file; `PUID` and
+  `PGID` set szo's uid and gid at start instead.
 - Key authentication only. The client's public key goes into
-  `/home/boxer/.ssh/authorized_keys`, folder mode `700`, file mode `600`,
+  `/home/szo/.ssh/authorized_keys`, folder mode `700`, file mode `600`,
   owned by `PUID`.
-- Mount `/home/boxer` and `/etc/ssh/keys` from the host. The home keeps
+- Mount `/home/szo` and `/etc/ssh/keys` from the host. The home keeps
   dotfiles, `tmux` config and `pip install --user` packages; the key folder
   keeps the ed25519 host key the entrypoint generates on the first start,
   so the client sees the same server identity after a recreate.
@@ -97,7 +97,7 @@ other.
   login, including `ssh host python script.py`.
 - `SZO_VERSION` is installed into the conda environment, not with
   `--user`: the entrypoint runs as root and a user install would land in
-  root's home, invisible to boxer.
+  root's home, invisible to szo.
 
 ## Choosing the szo version at start
 

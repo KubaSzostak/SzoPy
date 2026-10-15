@@ -20,7 +20,7 @@ Source and the full description of all images:
 - everything that is in `xszo/gdalpy` of the same tag, built from the same
   recipe
 - `openssh-server` on port 22, key authentication only, no root login
-- user `boxer` with passwordless `sudo`; `PUID` and `PGID` set its uid and
+- user `szo` with passwordless `sudo`; `PUID` and `PGID` set its uid and
   gid at start, so files written to a mounted folder get the host owner
 - `tmux`, `nano`, `htop`
 - every start prints the image name, tool versions and the szo version
@@ -42,7 +42,7 @@ services:
       PUID: "1000"
       PGID: "1000"
     volumes:
-      - ./home:/home/boxer
+      - ./home:/home/szo
       - ./ssh:/etc/ssh/keys
       - /srv/data:/srv/data
 ```
@@ -53,9 +53,9 @@ key of the client into `home/.ssh/authorized_keys`, owned by `PUID`, folder
 mode `700`, file mode `600`. Then:
 
 ```bash
-ssh -p 2201 boxer@host
+ssh -p 2201 szo@host
 ```
 
-The container starts as root so that `sshd` can switch to `boxer`; do not
+The container starts as root so that `sshd` can switch to `szo`; do not
 set `user:`. `SZO_VERSION: "0.1.0"` in `environment:` installs that `szo`
 into the environment at every start instead of the baked-in newest release.
