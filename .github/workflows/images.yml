@@ -74,6 +74,8 @@ jobs:
             short: Pinned psql, newest Python, GDAL and PostGIS commands
           - image: gdalpy
             short: Pinned GDAL, newest Python, psql and PostGIS commands
+          - image: gdalbox
+            short: gdalpy plus an SSH server, a workbench to log into
     steps:
       - uses: actions/checkout@v7
       - uses: peter-evans/dockerhub-description@v5

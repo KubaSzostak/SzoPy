@@ -13,5 +13,10 @@
     "arg": "GDAL_VERSION",
     "versions": ["3.10", "3.12", "3.13"],
     "latest": "3.13"
+  },
+  "gdalbox": {
+    "arg": "GDAL_VERSION",
+    "versions": ["3.13"],
+    "latest": "3.13"
   }
 }
